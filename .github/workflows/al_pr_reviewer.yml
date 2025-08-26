@@ -1,0 +1,64 @@
+name: AI Code Review (Azure OpenAI)
+
+on:
+  pull_request:
+    branches: [main]          # review PRs into main
+    types:    [opened, synchronize]
+
+permissions:
+  contents:       read
+  pull-requests:  write
+  issues:         read        # linked issues are added to the prompt
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0      # base & head commits are both needed for git diff
+
+      - name: Run AI Code Reviewer
+        uses: AidentErfurt/bc-ai-reviewer@main
+        with:
+          GITHUB_TOKEN:      ${{ secrets.GITHUB_TOKEN }}
+
+          # AI back-end (Azure OpenAI)
+          AI_PROVIDER:       azure
+          AZURE_ENDPOINT:    https://adaptoropenai.openai.azure.com
+          AZURE_API_KEY:     ${{ secrets.AZURE_OPENAI_KEY }}
+          AZURE_API_VERSION: 2024-12-01-preview
+
+          # Separate base model vs deployment
+          AI_MODEL:          gpt-4.1              # base model name
+          AZURE_DEPLOYMENT:  gpt-4.1      # your deployment's friendly name
+
+          PROMPT_STYLE:      auto
+          REASONING_EFFORT:  high
+
+          # Review behaviour
+          MAX_COMMENTS:      0              # unlimited inline comments
+
+          # Prompt & repo context tweaks
+          BASE_PROMPT_EXTRA: |
+            You are reviewing **Business Central AppSource apps** plus supporting
+            docs (docfx) and AL-Go pipelines.  Priorities:
+              - correctness & performance of AL code
+              - adherence to AppSource requirements
+              - localisation quality in .xlf files
+              - pipeline clarity (GitHub Actions / YAML)
+
+          PROJECT_CONTEXT: |
+            This repository contains:
+              - several Business Central Apps
+              - docfx-based documentation
+              - an extended fork of AL-Go for GitHub
+            Goal: consistent quality gates across all apps with minimal noise.
+
+          # Diff scope filters
+          INCLUDE_PATTERNS:  "**/*.al,**/*.xlf,**/app.json"
+          EXCLUDE_PATTERNS:  ""
+
+          # Misc
+          FETCH_CLOSED_ISSUES:  false   # ignore already-closed issues
