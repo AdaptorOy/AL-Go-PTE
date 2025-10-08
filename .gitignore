@@ -8,7 +8,6 @@ TestResults*.xml
 bcptTestResults*.json
 BuildOutput.txt
 rad.json
-README.md
 .output/
 .dependencies/
 .buildartifacts/
