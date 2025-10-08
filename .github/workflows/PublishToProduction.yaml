@@ -1,0 +1,26 @@
+name: 'PublishToPROD'
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+env:
+  appVersion: 'Current'
+  environmentName: 'Production'
+
+jobs:
+  Initialization:
+    runs-on: [ ubuntu-latest ]
+    steps:
+      - name: Trigger Publish To Environment
+        uses: octokit/request-action@v2.x
+        with:
+          route: POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+          workflow_id: PublishToEnvironment.yaml
+          ref: main
+          inputs: '{"appVersion": ${{ env.appVersion }}, "environmentName": ${{ env.environmentName}} }'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GHTOKENWORKFLOW }}
